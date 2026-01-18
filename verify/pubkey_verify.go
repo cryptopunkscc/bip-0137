@@ -8,54 +8,17 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/btcsuite/btcd/btcutil"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/decred/dcrd/dcrec/secp256k1/v4"
 
 	"github.com/btcsuite/btcd/btcec/v2/ecdsa"
 )
 
-// EnhancedVerifyBip137SignatureWithPubKey verifies if a message was signed by the provided
-// public key according to BIP-0137. This implementation provides direct verification
-// using the public key and falls back to address-based verification if needed.
-//
-// The verification process follows these steps:
-// 1. Attempt direct verification using the given public key
-//   - Format the message according to Bitcoin's standard with proper length encoding
-//   - Double SHA-256 hash the formatted message
-//   - Extract R and S components from the signature
-//   - Create a DER-encoded signature and verify against the public key
-//     2. If direct verification fails, derive the Bitcoin address from the public key
-//     and fall back to address-based verification
-//
-// This approach provides faster verification when the public key is available
-// and maintains compatibility with all signature formats through the fallback mechanism.
-//
-// Parameters:
-// - pubKey: The Bitcoin public key that allegedly signed the message
-// - message: The content that was allegedly signed
-// - signatureBase64: The base64-encoded signature to verify
-//
-// Returns:
-// - bool: true if the signature is valid, false otherwise
-// - error: an error if the verification process fails
-func EnhancedVerifyBip137SignatureWithPubKey(pubKey *btcec.PublicKey, message, signatureBase64 string) (bool, error) {
-	LogInfo("Starting enhanced BIP-0137 signature verification with public key")
-	LogDebug("Message: %s", message)
-	LogDebug("Signature (Base64): %s", signatureBase64)
-
-	if pubKey == nil {
-		LogError("Empty public key provided")
-		return false, fmt.Errorf("empty public key")
-	}
-
-	LogDebug("Public Key (compressed): %x", pubKey.SerializeCompressed())
-
+func VerifyWithPubKey(pubKey *secp256k1.PublicKey, message, signatureBase64 string) (bool, error) {
 	// First attempt: Direct verification with public key
 	valid, err := verifySignatureDirectly(pubKey, message, signatureBase64)
 	if err == nil {
-		LogInfo("Direct signature verification result: %t", valid)
 		return valid, nil
 	}
-
-	LogDebug("Direct verification failed, falling back to address-based verification: %v", err)
 
 	// Second attempt: Derive address and use address-based verification
 	return verifyWithDerivedAddress(pubKey, message, signatureBase64)
@@ -64,8 +27,6 @@ func EnhancedVerifyBip137SignatureWithPubKey(pubKey *btcec.PublicKey, message, s
 // verifySignatureDirectly attempts to verify a Bitcoin message signature directly
 // using the provided public key.
 func verifySignatureDirectly(pubKey *btcec.PublicKey, message, signatureBase64 string) (bool, error) {
-	LogDebug("Attempting direct signature verification with public key")
-
 	// Decode signature from base64
 	sigBytes, err := base64.StdEncoding.DecodeString(signatureBase64)
 	if err != nil {
@@ -168,8 +129,6 @@ func verifySignatureDirectly(pubKey *btcec.PublicKey, message, signatureBase64 s
 // verifyWithDerivedAddress derives a Bitcoin address from the public key and uses
 // address-based verification as a fallback.
 func verifyWithDerivedAddress(pubKey *btcec.PublicKey, message, signatureBase64 string) (bool, error) {
-	LogDebug("Deriving Bitcoin address from public key for verification")
-
 	// Determine if the signature uses a compressed or uncompressed key
 	// from the signature header byte
 	sigBytes, err := base64.StdEncoding.DecodeString(signatureBase64)
@@ -187,10 +146,6 @@ func verifyWithDerivedAddress(pubKey *btcec.PublicKey, message, signatureBase64 
 		return false, fmt.Errorf("failed to derive address from public key: %w", err)
 	}
 
-	LogInfo("Derived address from public key: %s", derivedAddress)
-
-	// Use the address-based verification method
-	LogDebug("Falling back to address-based verification")
 	return VerifyBip137Signature(derivedAddress, message, signatureBase64)
 }
 

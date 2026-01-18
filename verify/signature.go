@@ -2,7 +2,6 @@ package verify
 
 import (
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"time"
@@ -36,87 +35,21 @@ type SignedMessage struct {
 // associated with the provided Bitcoin address according to BIP-0137.
 // It uses the Bitcoin mainnet parameters by default.
 func VerifyBip137Signature(address, message, signatureBase64 string) (bool, error) {
-	LogInfo("Starting BIP-0137 signature verification")
-	LogDebug("Address: %s", address)
-	LogDebug("Message: %s", message)
-	LogDebug("Signature (Base64): %s", signatureBase64)
-
-	startTime := time.Now()
-	defer func() {
-		LogDebug("Verification completed in %s", time.Since(startTime))
-	}()
-
 	return VerifyBip137SignatureWithParams(address, message, signatureBase64, &chaincfg.MainNetParams)
 }
 
 // VerifyBip137SignatureWithParams verifies a BIP-0137 signature using the provided
 // network parameters (mainnet, testnet, etc.).
 func VerifyBip137SignatureWithParams(address, message, signatureBase64 string, params *chaincfg.Params) (bool, error) {
-	LogDebug("Verifying signature with network parameters: %s", params.Name)
-
-	// Log inputs
-	if GetLogLevel() >= LogLevelTrace {
-		LogTrace("Detailed verification parameters:")
-		LogTrace("Network: %s", params.Name)
-		LogTrace("P2PKH Prefix: %x", params.PubKeyHashAddrID)
-		LogTrace("P2SH Prefix: %x", params.ScriptHashAddrID)
-	}
-
 	// Validate inputs
 	if address == "" {
-		LogError("Empty address provided")
 		return false, ErrEmptyAddress
 	}
 	if message == "" {
-		LogError("Empty message provided")
 		return false, ErrEmptyMessage
 	}
 	if signatureBase64 == "" {
-		LogError("Empty signature provided")
 		return false, ErrEmptySignature
-	}
-
-	// Attempt to decode the signature to validate it's correct base64
-	sigBytes, err := base64.StdEncoding.DecodeString(signatureBase64)
-	if err != nil {
-		LogError("Failed to decode base64 signature: %v", err)
-		return false, fmt.Errorf("invalid base64 signature: %w", err)
-	}
-
-	// Log the decoded signature bytes
-	LogTrace("Decoded signature (hex): %s", DumpHex(sigBytes))
-
-	// Check the signature header byte
-	if len(sigBytes) > 0 {
-		headerByte := sigBytes[0]
-		LogDebug("Signature header byte: 0x%02x", headerByte)
-
-		// Analyze the header byte based on BIP-0137
-		recID := headerByte & 0x03
-		isCompressed := false
-		addrType := "Unknown"
-
-		switch {
-		case headerByte >= 27 && headerByte <= 30:
-			addrType = "P2PKH (uncompressed)"
-			isCompressed = false
-		case headerByte >= 31 && headerByte <= 34:
-			addrType = "P2PKH (compressed)"
-			isCompressed = true
-		case headerByte >= 35 && headerByte <= 38:
-			addrType = "P2SH-P2WPKH (SegWit over P2SH)"
-			isCompressed = true
-		case headerByte >= 39 && headerByte <= 42:
-			addrType = "P2WPKH (native SegWit)"
-			isCompressed = true
-		default:
-			LogWarning("Unknown signature header byte: 0x%02x", headerByte)
-		}
-
-		LogDebug("Signature details from header:")
-		LogDebug("  Address type: %s", addrType)
-		LogDebug("  Compressed public key: %t", isCompressed)
-		LogDebug("  Recovery ID: %d", recID)
 	}
 
 	// Create a signed message struct
@@ -127,17 +60,9 @@ func VerifyBip137SignatureWithParams(address, message, signatureBase64 string, p
 	}
 
 	// Verify the signature using the provided network parameters
-	LogDebug("Calling BitonicNL verifier to verify signature")
 	valid, err := verifier.VerifyWithChain(signedMessage, params)
 	if err != nil {
-		LogError("Signature verification failed: %v", err)
 		return false, fmt.Errorf("signature verification error: %w", err)
-	}
-
-	if valid {
-		LogInfo("Signature verification successful")
-	} else {
-		LogInfo("Signature verification failed (invalid signature)")
 	}
 
 	return valid, nil

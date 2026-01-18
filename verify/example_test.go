@@ -39,7 +39,7 @@ func ExampleVerifyBip137SignatureWithPubKey() {
 	pubKeyBytes, _ := hex.DecodeString(pubKeyHex)
 	pubKey, _ := btcec.ParsePubKey(pubKeyBytes)
 
-	valid, err := verify.VerifyBip137SignatureWithPubKey(pubKey, message, signature)
+	valid, err := verify.VerifyWithPubKey(pubKey, message, signature)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
