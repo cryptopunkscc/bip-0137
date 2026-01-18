@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sero/btc/verify"
+	"github.com/cryptopunkscc/bip-0137/verify"
 )
 
 func main() {

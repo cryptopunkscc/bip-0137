@@ -1,4 +1,4 @@
-module github.com/sero/btc
+module github.com/cryptopunkscc/bip-0137
 
 go 1.24.1
 

@@ -4,3 +4,4 @@ bitcoin-test/tsconfig.json
 bitcoin-test/tsconfig.node.json
 bitcoin-test/tsconfig.app.json
 bitcoin-test/tsconfig.browser.json
+.idea

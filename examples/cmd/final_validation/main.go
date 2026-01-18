@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/sero/btc/verify"
+	"github.com/cryptopunkscc/bip-0137/verify"
 )
 
 // Create a struct for test vectors

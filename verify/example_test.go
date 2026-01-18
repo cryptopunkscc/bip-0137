@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/sero/btc/verify"
+	"github.com/cryptopunkscc/bip-0137/verify"
 )
 
 // ExampleVerifyBip137Signature demonstrates how to verify a Bitcoin signature

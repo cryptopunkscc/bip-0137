@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/btcsuite/btcd/btcec/v2"
-	"github.com/sero/btc/verify"
+	"github.com/cryptopunkscc/bip-0137/verify"
 )
 
 func main() {
